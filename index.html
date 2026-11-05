@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Evento - Múltiples Administradores</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+    <!-- Header / Navbar -->
+    <header class="bg-indigo-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-2.5 rounded-xl">
+                    <i class="fa-solid fa-users-rectangle text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Gestión y Check-in del Evento</h1>
+                    <p class="text-indigo-200 text-xs" id="header-subtitle">Sistema de Control de Asistencia</p>
+                </div>
+            </div>
+            
+            <!-- Barra de Sesión Activa -->
+            <div id="header-session-info" class="hidden flex items-center gap-3">
+                <span id="header-user-badge" class="bg-indigo-900/60 text-indigo-100 text-xs px-3 py-1.5 rounded-lg border border-indigo-500/40 font-semibold">
+                    <!-- Dinámico -->
+                </span>
+                <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                    <i class="fa-solid fa-right-from-bracket"></i> Salir
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+
+        <!-- ================= PANTALLA DE LOGIN UNIFICADA ================= -->
+        <div id="view-login" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-100 mt-8">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
+                    <i class="fa-solid fa-user-lock"></i>
+                </div>
+                <h2 class="text-xl font-bold text-slate-800">Iniciar Sesión</h2>
+                <p class="text-xs text-slate-400 mt-1">Ingresa con tus credenciales de Administrador o Líder</p>
+            </div>
+            
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario</label>
+                    <input type="text" id="input-username" required placeholder="Tu usuario" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
+                    <input type="password" id="input-password" required placeholder="••••••••" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                </div>
+                
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm cursor-pointer mt-2">
+                    Ingresar al Sistema
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+                <p class="text-[11px] text-slate-400">
+                    <i class="fa-solid fa-circle-info text-indigo-500 mr-1"></i>
+                    <strong>Admin por defecto:</strong> <span class="font-mono text-slate-600">admin</span> / <span class="font-mono text-slate-600">admin123</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- ================= PANEL ADMINISTRADOR ================= -->
+        <div id="view-admin" class="hidden space-y-6">
+            <!-- Tarjetas de Resumen -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Líderes</p>
+                        <h3 id="stat-total-leaders" class="text-2xl font-bold text-slate-700 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-user-group"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Meta Global</p>
+                        <h3 id="stat-global-goal" class="text-2xl font-bold text-slate-700 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Registrados / Asistencia</p>
+                        <h3 id="stat-total-guests" class="text-2xl font-bold text-indigo-600 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Cumplimiento Global</p>
+                        <h3 id="stat-global-percent" class="text-2xl font-bold text-indigo-600 mt-1">0%</h3>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Control: Gestión de Líderes y Admins -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Columna Izquierda: Formularios de Creación -->
+                <div class="space-y-6">
+                    <!-- Registrar Líder -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus text-indigo-600"></i> Registrar Nuevo Líder
+                        </h3>
+                        <form id="form-add-leader" onsubmit="handleAddLeader(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre Completo</label>
+                                <input type="text" id="leader-name" required placeholder="Ej. Carlos Mendoza" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario</label>
+                                    <input type="text" id="leader-user" required placeholder="carlos" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
+                                    <input type="text" id="leader-pass" required placeholder="clave123" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Meta de Invitados</label>
+                                <input type="number" id="leader-goal" min="1" required placeholder="Ej. 25" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm cursor-pointer">
+                                Guardar Líder
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Registrar Co-Administrador -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-user-shield text-indigo-600"></i> Registrar Administrador
+                        </h3>
+                        <form onsubmit="handleAddAdmin(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre / Identificador</label>
+                                <input type="text" id="admin-name" required placeholder="Ej. Admin Puerta" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario</label>
+                                    <input type="text" id="admin-user-input" required placeholder="puerta1" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
+                                    <input type="text" id="admin-pass-input" required placeholder="clave" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm cursor-pointer">
+                                Crear Administrador
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Tablas -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2 space-y-6">
+                    <!-- Tabla de Líderes -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-ranking-star text-indigo-600"></i> Progreso por Líder
+                            </h3>
+                            <button onclick="exportToCSV()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-file-arrow-down"></i> Exportar CSV
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto max-h-[250px] overflow-y-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead class="sticky top-0 bg-slate-50 text-slate-500 uppercase text-[11px] tracking-wider">
+                                    <tr>
+                                        <th class="p-3">Líder / Usuario</th>
+                                        <th class="p-3 text-center">Registrados / Meta</th>
+                                        <th class="p-3">Avance</th>
+                                        <th class="p-3 text-center">Estado</th>
+                                        <th class="p-3 text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-leaders-table" class="divide-y divide-slate-100">
+                                    <!-- Dinámico -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Administradores -->
+                    <div class="pt-4 border-t border-slate-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-shield-halved text-indigo-600"></i> Administradores del Sistema
+                            </h3>
+                            <button onclick="openEditMyProfileModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-user-gear"></i> Editar Mis Datos
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto max-h-[180px] overflow-y-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead class="sticky top-0 bg-slate-50 text-slate-500 uppercase text-[11px] tracking-wider">
+                                    <tr>
+                                        <th class="p-3">Nombre</th>
+                                        <th class="p-3">Usuario</th>
+                                        <th class="p-3 text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-users-table" class="divide-y divide-slate-100">
+                                    <!-- Dinámico -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Base de Datos Maestra y Check-in -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-clipboard-user text-indigo-600"></i> Base de Datos y Control de Asistencia (Puerta)
+                    </h3>
+                    <div class="w-full sm:w-auto">
+                        <select id="filter-leader" onchange="renderMasterGuests()" class="w-full sm:w-64 px-3 py-2 rounded-xl border border-slate-200 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                            <option value="">Filtrar por líder (Todos)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead class="sticky top-0 bg-slate-50 text-slate-500 uppercase text-[11px] tracking-wider">
+                            <tr>
+                                <th class="p-3">Invitado</th>
+                                <th class="p-3">Cédula</th>
+                                <th class="p-3">Teléfono</th>
+                                <th class="p-3">Líder Responsable</th>
+                                <th class="p-3 text-center">Check-in (Puerta)</th>
+                                <th class="p-3 text-right">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="master-guests-table" class="divide-y divide-slate-100">
+                            <!-- Dinámico -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PANEL VISTA LÍDER ================= -->
+        <div id="view-leader" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-400">Bienvenido(a),</p>
+                        <h3 id="logged-leader-name" class="text-lg font-bold text-slate-800">Nombre del Líder</h3>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 w-full sm:w-auto justify-around">
+                    <div>
+                        <p class="text-[10px] font-semibold text-indigo-400 uppercase">Meta</p>
+                        <p id="leader-target-display" class="text-base font-bold text-indigo-700">0</p>
+                    </div>
+                    <div class="h-6 w-px bg-indigo-200"></div>
+                    <div>
+                        <p class="text-[10px] font-semibold text-indigo-400 uppercase">Registrados</p>
+                        <p id="leader-current-display" class="text-base font-bold text-indigo-700">0</p>
+                    </div>
+                    <div class="h-6 w-px bg-indigo-200"></div>
+                    <div>
+                        <p class="text-[10px] font-semibold text-indigo-400 uppercase">Progreso</p>
+                        <p id="leader-percent-display" class="text-base font-bold text-indigo-700">0%</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Formulario Registro -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-fit">
+                    <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus text-indigo-600"></i> Registrar Invitado
+                    </h3>
+                    <form id="form-add-guest" onsubmit="handleAddGuest(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre Completo</label>
+                            <input type="text" id="guest-name" required placeholder="Ej. Ana Pérez" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Número de Cédula (Anti-duplicados)</label>
+                            <input type="text" id="guest-cedula" required placeholder="Ej. 1114555666" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono / WhatsApp</label>
+                            <input type="text" id="guest-phone" required placeholder="Ej. 3001234567" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Correo Electrónico (Opcional)</label>
+                            <input type="email" id="guest-email" placeholder="correo@ejemplo.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm cursor-pointer">
+                            Agregar a mi Lista
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Tabla de Invitados Propios -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+                    <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-indigo-600"></i> Mis Invitados Registrados
+                    </h3>
+                    <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="sticky top-0 bg-slate-50 text-slate-500 uppercase text-[11px] tracking-wider">
+                                <tr>
+                                    <th class="p-3">Invitado</th>
+                                    <th class="p-3">Cédula</th>
+                                    <th class="p-3">Teléfono</th>
+                                    <th class="p-3 text-center">Estado en Puerta</th>
+                                    <th class="p-3 text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leader-guests-table" class="divide-y divide-slate-100">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ================= MODAL EDITAR LÍDER ================= -->
+    <div id="modal-edit-leader" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-md p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-user-pen text-indigo-600"></i> Editar Datos del Líder
+                </h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">&times;</button>
+            </div>
+            <form onsubmit="handleSaveEditLeader(event)" class="space-y-4">
+                <input type="hidden" id="edit-leader-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre Completo</label>
+                    <input type="text" id="edit-leader-name" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario</label>
+                        <input type="text" id="edit-leader-user" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
+                        <input type="text" id="edit-leader-pass" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Meta de Invitados</label>
+                    <input type="number" id="edit-leader-goal" min="1" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeEditModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-xl text-sm transition cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm cursor-pointer">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL EDITAR PERFIL ADMIN ================= -->
+    <div id="modal-edit-admin" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-md p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-user-gear text-indigo-600"></i> Editar Mis Datos de Administrador
+                </h3>
+                <button onclick="closeEditAdminModal()" class="text-slate-400 hover:text-slate-600 text-lg cursor-pointer">&times;</button>
+            </div>
+            <form onsubmit="handleSaveEditAdmin(event)" class="space-y-4">
+                <input type="hidden" id="edit-admin-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre / Identificador</label>
+                    <input type="text" id="edit-admin-name" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Usuario</label>
+                        <input type="text" id="edit-admin-user" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Contraseña</label>
+                        <input type="text" id="edit-admin-pass" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeEditAdminModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-xl text-sm transition cursor-pointer">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow-sm cursor-pointer">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script de Lógica General -->
+    <script>
+        const defaultAdmins = [
+            { id: "a1", name: "Administrador Principal", user: "admin", pass: "admin123" }
+        ];
+
+        const defaultLeaders = [
+            { id: "l1", name: "María Camila Gómez", user: "maria", pass: "123", goal: 30 },
+            { id: "l2", name: "Andrés Felipe Restrepo", user: "andres", pass: "123", goal: 20 },
+            { id: "l3", name: "Diana Marcela Torres", user: "diana", pass: "123", goal: 40 }
+        ];
+
+        const defaultGuests = [
+            { id: "g1", leaderId: "l1", name: "Juan David López", cedula: "1110222333", phone: "3104567890", email: "juan@mail.com", attended: true, date: "2026-06-01 10:30" },
+            { id: "g2", leaderId: "l1", name: "Sofia Morales", cedula: "1110444555", phone: "3209876543", email: "sofia@mail.com", attended: false, date: "2026-06-01 11:15" },
+            { id: "g3", leaderId: "l2", name: "Esteban Rojas", cedula: "1110666777", phone: "3151234567", email: "esteban@mail.com", attended: true, date: "2026-06-02 09:00" }
+        ];
+
+        // --- CORRECCIÓN CLAVE: Asegurar carga correcta o inicialización limpia ---
+        let storedAdmins = JSON.parse(localStorage.getItem('event_admins'));
+        let admins = (storedAdmins && storedAdmins.length > 0) ? storedAdmins : defaultAdmins;
+
+        let leaders = JSON.parse(localStorage.getItem('event_leaders')) || defaultLeaders;
+        let guests = JSON.parse(localStorage.getItem('event_guests')) || defaultGuests;
+        
+        let currentRole = localStorage.getItem('session_role') || null;
+        let currentAdminId = localStorage.getItem('session_admin_id') || null;
+        let currentLeaderId = localStorage.getItem('session_leader_id') || null;
+
+        function saveData() {
+            localStorage.setItem('event_admins', JSON.stringify(admins));
+            localStorage.setItem('event_leaders', JSON.stringify(leaders));
+            localStorage.setItem('event_guests', JSON.stringify(guests));
+            if (currentRole) {
+                localStorage.setItem('session_role', currentRole);
+                if (currentAdminId) localStorage.setItem('session_admin_id', currentAdminId);
+                else localStorage.removeItem('session_admin_id');
+                if (currentLeaderId) localStorage.setItem('session_leader_id', currentLeaderId);
+                else localStorage.removeItem('session_leader_id');
+            } else {
+                localStorage.removeItem('session_role');
+                localStorage.removeItem('session_admin_id');
+                localStorage.removeItem('session_leader_id');
+            }
+        }
+
+        // --- SISTEMA DE AUTENTICACIÓN ---
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('input-username').value.trim().toLowerCase();
+            const p = document.getElementById('input-password').value.trim();
+
+            // 1. Verificar si es Administrador
+            const foundAdmin = admins.find(a => a.user.toLowerCase() === u && a.pass === p);
+            if (foundAdmin) {
+                currentRole = 'admin';
+                currentAdminId = foundAdmin.id;
+                currentLeaderId = null;
+                saveData();
+                initView();
+                return;
+            }
+
+            // 2. Verificar si es un Líder
+            const foundLeader = leaders.find(l => l.user.toLowerCase() === u && l.pass === p);
+            if (foundLeader) {
+                currentRole = 'leader';
+                currentLeaderId = foundLeader.id;
+                currentAdminId = null;
+                saveData();
+                initView();
+                return;
+            }
+
+            alert('⚠️ Credenciales incorrectas. Revisa tu usuario y contraseña.');
+        }
+
+        function handleLogout() {
+            currentRole = null;
+            currentAdminId = null;
+            currentLeaderId = null;
+            saveData();
+            initView();
+        }
+
+        function initView() {
+            const viewLogin = document.getElementById('view-login');
+            const viewAdmin = document.getElementById('view-admin');
+            const viewLeader = document.getElementById('view-leader');
+            const sessionInfo = document.getElementById('header-session-info');
+            const userBadge = document.getElementById('header-user-badge');
+
+            viewLogin.classList.add('hidden');
+            viewAdmin.classList.add('hidden');
+            viewLeader.classList.add('hidden');
+
+            if (!currentRole) {
+                viewLogin.classList.remove('hidden');
+                sessionInfo.classList.add('hidden');
+                document.getElementById('input-username').value = '';
+                document.getElementById('input-password').value = '';
+                return;
+            }
+
+            sessionInfo.classList.remove('hidden');
+
+            if (currentRole === 'admin') {
+                const adminObj = admins.find(a => a.id === currentAdminId) || admins[0];
+                userBadge.innerHTML = `<i class="fa-solid fa-shield-halved mr-1 text-indigo-300"></i> Admin: ${adminObj.name}`;
+                viewAdmin.classList.remove('hidden');
+                renderAdmin();
+            } else if (currentRole === 'leader') {
+                const leaderObj = leaders.find(l => l.id === currentLeaderId);
+                const name = leaderObj ? leaderObj.name : 'Líder';
+                userBadge.innerHTML = `<i class="fa-solid fa-user-tie mr-1 text-indigo-300"></i> ${name}`; viewLeader.classList.remove('hidden'); renderLeaderDashboard(); } }  // --- FUNCIONES ADMIN --- function renderAdmin() { let totalGuestsCount = guests.length; let attendedCount = guests.filter(g => g.attended).length; let totalGoalCount = leaders.reduce((acc, l) => acc + Number(l.goal), 0); let globalPercent = totalGoalCount > 0 ? Math.min(100, Math.round((totalGuestsCount / totalGoalCount) * 100)) : 0;  document.getElementById('stat-total-leaders').innerText = leaders.length; document.getElementById('stat-global-goal').innerText = totalGoalCount; document.getElementById('stat-total-guests').innerHTML = `${totalGuestsCount} <span class="text-sm font-normal text-slate-400">(${attendedCount} en puerta)</span>`;
+            document.getElementById('stat-global-percent').innerText = globalPercent + '%';
+
+            // Renderizar tabla de líderes
+            const tbodyLeaders = document.getElementById('admin-leaders-table');
+            tbodyLeaders.innerHTML = '';
+            if (leaders.length === 0) {
+                tbodyLeaders.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No hay líderes registrados aún.</td></tr>`;
+            } else {
+                leaders.forEach(leader => {
+                    const leaderGuests = guests.filter(g => g.leaderId === leader.id);
+                    const count = leaderGuests.length;
+                    const percent = leader.goal > 0 ? Math.min(100, Math.round((count / leader.goal) * 100)) : 0;
+                    
+                    let badgeColor = "bg-amber-50 text-amber-700 border-amber-200";
+                    let badgeText = "En Progreso";
+                    if (count >= leader.goal) {
+                        badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                        badgeText = "¡Meta Cumplida!";
+                    } else if (percent < 30) {
+                        badgeColor = "bg-rose-50 text-rose-700 border-rose-200";
+                        badgeText = "Bajo Rendimiento";
+                    }
+
+                    tbodyLeaders.innerHTML += `
+                        <tr class="hover:bg-slate-50/50 transition">
+                            <td class="p-3">
+                                <p class="font-semibold text-slate-700">${leader.name}</p>
+                                <p class="text-xs text-slate-400">Usuario: <span class="font-mono text-indigo-600">${leader.user}</span></p>
+                            </td>
+                            <td class="p-3 text-center"><span class="font-bold text-indigo-600">${count}</span> /${leader.goal}</td>
+                            <td class="p-3 w-40">
+                                <div class="flex items-center gap-2">
+                                    <div class="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
+                                        <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                                    </div>
+                                    <span class="text-xs font-semibold text-slate-500 w-9 text-right">${percent}%</span>
+                                </div>
+                            </td>
+                            <td class="p-3 text-center">
+                                <span class="px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeColor}">${badgeText}</span>
+                            </td>
+                            <td class="p-3 text-right space-x-1">
+                                <button onclick="openEditModal('${leader.id}')" class="text-slate-400 hover:text-indigo-600 transition p-1 cursor-pointer" title="Editar líder">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button onclick="deleteLeader('${leader.id}')" class="text-slate-400 hover:text-rose-600 transition p-1 cursor-pointer" title="Eliminar líder">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // Renderizar tabla de administradores
+            const tbodyAdmins = document.getElementById('admin-users-table');
+            tbodyAdmins.innerHTML = '';
+            admins.forEach(adm => {
+                let deleteBtn = admins.length > 1 && adm.id !== currentAdminId 
+                    ? `<button onclick="deleteAdmin('${adm.id}')" class="text-slate-400 hover:text-rose-600 transition p-1 cursor-pointer" title="Eliminar admin"><i class="fa-solid fa-trash-can"></i></button>` 
+                    : `<span class="text-[10px] text-slate-300 font-semibold">(Actual)</span>`;
+
+                tbodyAdmins.innerHTML += `
+                    <tr class="hover:bg-slate-50/50 transition">
+                        <td class="p-3 font-semibold text-slate-700">${adm.name}</td>
+                        <td class="p-3 font-mono text-indigo-600">${adm.user}</td>
+                        <td class="p-3 text-right">${deleteBtn}</td>
+                    </tr>
+                `;
+            });
+
+            updateFilterDropdown();
+            renderMasterGuests();
+        }
+
+        function handleAddLeader(e) {
+            e.preventDefault();
+            const name = document.getElementById('leader-name').value.trim();
+            const user = document.getElementById('leader-user').value.trim().toLowerCase();
+            const pass = document.getElementById('leader-pass').value.trim();
+            const goal = parseInt(document.getElementById('leader-goal').value);
+
+            if (!name || !user || !pass || isNaN(goal)) return;
+
+            if (admins.some(a => a.user.toLowerCase() === user) || leaders.some(l => l.user.toLowerCase() === user)) {
+                alert('El nombre de usuario ya está en uso. Elige otro.');
+                return;
+            }
+
+            const newLeader = { id: 'l_' + Date.now(), name, user, pass, goal };
+            leaders.push(newLeader);
+            saveData();
+            document.getElementById('form-add-leader').reset();
+            renderAdmin();
+        }
+
+        function handleAddAdmin(e) {
+            e.preventDefault();
+            const name = document.getElementById('admin-name').value.trim();
+            const user = document.getElementById('admin-user-input').value.trim().toLowerCase();
+            const pass = document.getElementById('admin-pass-input').value.trim();
+
+            if (!name || !user || !pass) return;
+
+            if (admins.some(a => a.user.toLowerCase() === user) || leaders.some(l => l.user.toLowerCase() === user)) {
+                alert('El nombre de usuario ya está en uso.');
+                return;
+            }
+
+            const newAdmin = { id: 'a_' + Date.now(), name, user, pass };
+            admins.push(newAdmin);
+            saveData();
+            e.target.reset();
+            renderAdmin();
+            alert('¡Administrador creado con éxito!');
+        }
+
+        function deleteAdmin(id) {
+            if (admins.length <= 1) {
+                alert('No puedes eliminar al único administrador del sistema.');
+                return;
+            }
+            if (confirm('¿Estás seguro de eliminar este administrador?')) {
+                admins = admins.filter(a => a.id !== id);
+                saveData();
+                renderAdmin();
+            }
+        }
+
+        function openEditMyProfileModal() {
+            const adminObj = admins.find(a => a.id === currentAdminId) || admins[0];
+            document.getElementById('edit-admin-id').value = adminObj.id;
+            document.getElementById('edit-admin-name').value = adminObj.name;
+            document.getElementById('edit-admin-user').value = adminObj.user;
+            document.getElementById('edit-admin-pass').value = adminObj.pass;
+
+            document.getElementById('modal-edit-admin').classList.remove('hidden');
+        }
+
+        function closeEditAdminModal() {
+            document.getElementById('modal-edit-admin').classList.add('hidden');
+        }
+
+        function handleSaveEditAdmin(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-admin-id').value;
+            const name = document.getElementById('edit-admin-name').value.trim();
+            const user = document.getElementById('edit-admin-user').value.trim().toLowerCase();
+            const pass = document.getElementById('edit-admin-pass').value.trim();
+
+            if (admins.some(a => a.user.toLowerCase() === user && a.id !== id) || leaders.some(l => l.user.toLowerCase() === user)) {
+                alert('El nombre de usuario ya está en uso por otro usuario.');
+                return;
+            }
+
+            const idx = admins.findIndex(a => a.id === id);
+            if (idx !== -1) {
+                admins[idx] = { ...admins[idx], name, user, pass };
+                saveData();
+                closeEditAdminModal();
+                initView();
+            }
+        }
+
+        function openEditModal(id) {
+            const leader = leaders.find(l => l.id === id);
+            if (!leader) return;
+
+            document.getElementById('edit-leader-id').value = leader.id;
+            document.getElementById('edit-leader-name').value = leader.name;
+            document.getElementById('edit-leader-user').value = leader.user;
+            document.getElementById('edit-leader-pass').value = leader.pass;
+            document.getElementById('edit-leader-goal').value = leader.goal;
+
+            document.getElementById('modal-edit-leader').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('modal-edit-leader').classList.add('hidden');
+        }
+
+        function handleSaveEditLeader(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-leader-id').value;
+            const name = document.getElementById('edit-leader-name').value.trim();
+            const user = document.getElementById('edit-leader-user').value.trim().toLowerCase();
+            const pass = document.getElementById('edit-leader-pass').value.trim();
+            const goal = parseInt(document.getElementById('edit-leader-goal').value);
+
+            if (admins.some(a => a.user.toLowerCase() === user) || leaders.some(l => l.user.toLowerCase() === user && l.id !== id)) {
+                alert('El nombre de usuario ya pertenece a otro usuario.');
+                return;
+            }
+
+            const leaderIndex = leaders.findIndex(l => l.id === id);
+            if (leaderIndex !== -1) {
+                leaders[leaderIndex] = { ...leaders[leaderIndex], name, user, pass, goal };
+                saveData();
+                closeEditModal();
+                renderAdmin();
+            }
+        }
+
+        function deleteLeader(id) {
+            if (confirm('¿Estás seguro de eliminar este líder y todos sus invitados asociados?')) {
+                leaders = leaders.filter(l => l.id !== id);
+                guests = guests.filter(g => g.leaderId !== id);
+                saveData();
+                renderAdmin();
+            }
+        }
+
+        function updateFilterDropdown() {
+            const selectFilter = document.getElementById('filter-leader');
+            const currentValue = selectFilter.value;
+            selectFilter.innerHTML = '<option value="">Filtrar por líder (Todos)</option>';
+            leaders.forEach(l => {
+                selectFilter.innerHTML += `<option value="${l.id}">${l.name}</option>`;
+            });
+            selectFilter.value = currentValue;
+        }
+
+        function renderMasterGuests() {
+            const filterId = document.getElementById('filter-leader').value;
+            const tbodyMaster = document.getElementById('master-guests-table');
+            tbodyMaster.innerHTML = '';
+
+            let filteredGuests = filterId ? guests.filter(g => g.leaderId === filterId) : guests;
+
+            if (filteredGuests.length === 0) {
+                tbodyMaster.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">No hay invitados registrados.</td></tr>`;
+                return;
+            }
+
+            filteredGuests.forEach(guest => {
+                const leaderObj = leaders.find(l => l.id === guest.leaderId);
+                const leaderName = leaderObj ? leaderObj.name : 'Líder eliminado';
+
+                let checkBtnClass = guest.attended 
+                    ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-emerald-300" 
+                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 border-slate-200";
+                let checkText = guest.attended ? '<i class="fa-solid fa-check-circle mr-1"></i> Asistió' : '<i class="fa-solid fa-circle mr-1"></i> Pendiente';
+
+                tbodyMaster.innerHTML += `
+                    <tr class="hover:bg-slate-50/50 transition">
