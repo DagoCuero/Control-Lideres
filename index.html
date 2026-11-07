@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Evento - Sistema Pro</title>
+    <!-- Tailwind CSS v3 CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SDK de Firebase 9 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        // ⚠️ REEMPLAZA ESTOS DATOS CON LOS DE TU PROYECTO DE FIREBASE ⚠️
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5vqkk2lwth2kNl_aGpKdH7WCfNy93xHE",
+            authDomain: "control-lideres-93778.firebaseapp.com",
+            databaseURL: "https://control-lideres-93778-default-rtdb.firebaseio.com",
+            projectId: "control-lideres-93778",
+            storageBucket: "control-lideres-93778.firebasestorage.app",
+            messagingSenderId: "168403534522",
+            appId: "1:168403534522:web:9efa839d49469f11d8f883",
+            measurementId: "G-RXTCZSQNY6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.db = db;
+        window.dbRef = ref;
+        window.dbSet = set;
+        window.dbPush = push;
+        window.dbOnValue = onValue;
+        window.dbRemove = remove;
+        window.dbUpdate = update;
+    </script>
+</head>
+<body id="app-body" class="bg-slate-50 text-slate-800 font-sans min-h-screen text-base transition-colors duration-300">
+
+    <!-- Header / Navbar -->
+    <header id="app-header" class="bg-indigo-700 text-white shadow-md transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="bg-white/10 p-3.5 rounded-2xl">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Registro y Control de Asistentes</h1>
+                    <p class="text-indigo-200 text-sm" id="header-subtitle">Evento Presentación de Candidatos</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto justify-center">
+                
+                <!-- Botón de Modo Alto Contraste (Exteriores) -->
+                <button type="button" onclick="toggleContrastMode()" class="bg-indigo-900/60 hover:bg-indigo-950 text-amber-300 border border-indigo-400/40 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition flex items-center gap-2 cursor-pointer shadow-sm" title="Cambiar a Modo Alto Contraste">
+                    <i class="fa-solid fa-sun-plant-wilt text-lg"></i>
+                    <span class="hidden sm:inline">Modo Nocturno</span>
+                </button>
+
+                <!-- CUENTA REGRESIVA DIGITAL EN NÚMEROS -->
+                <div id="countdown-container" class="bg-indigo-900/80 border border-indigo-400/40 rounded-2xl p-2.5 px-4 flex items-center gap-3 shadow-md w-full sm:w-auto justify-center">
+                    <div class="text-indigo-300 text-xl hidden sm:block">
+                        <i class="fa-solid fa-stopwatch animate-pulse"></i>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 font-mono text-center">
+                        <!-- Días -->
+                        <div class="bg-indigo-950/80 px-3 py-1.5 rounded-xl border border-indigo-500/30 min-w-[54px]">
+                            <span id="cd-days" class="block text-xl md:text-2xl font-black text-amber-400">00</span>
+                            <span class="block text-[9px] font-sans font-bold text-indigo-200 uppercase tracking-wider">Días</span>
+                        </div>
+                        <span class="text-xl font-bold text-indigo-300 mb-2">:</span>
+
+                        <!-- Horas -->
+                        <div class="bg-indigo-950/80 px-3 py-1.5 rounded-xl border border-indigo-500/30 min-w-[54px]">
+                            <span id="cd-hours" class="block text-xl md:text-2xl font-black text-white">00</span>
+                            <span class="block text-[9px] font-sans font-bold text-indigo-200 uppercase tracking-wider">Horas</span>
+                        </div>
+                        <span class="text-xl font-bold text-indigo-300 mb-2">:</span>
+
+                        <!-- Minutos -->
+                        <div class="bg-indigo-950/80 px-3 py-1.5 rounded-xl border border-indigo-500/30 min-w-[54px]">
+                            <span id="cd-minutes" class="block text-xl md:text-2xl font-black text-white">00</span>
+                            <span class="block text-[9px] font-sans font-bold text-indigo-200 uppercase tracking-wider">Min</span>
+                        </div>
+                        <span class="text-xl font-bold text-indigo-300 mb-2">:</span>
+
+                        <!-- Segundos -->
+                        <div class="bg-indigo-950/80 px-3 py-1.5 rounded-xl border border-indigo-500/30 min-w-[54px]">
+                            <span id="cd-seconds" class="block text-xl md:text-2xl font-black text-rose-400">00</span>
+                            <span class="block text-[9px] font-sans font-bold text-indigo-200 uppercase tracking-wider">Seg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="header-session-info" class="hidden flex items-center gap-3">
+                    <span id="header-user-badge" class="bg-indigo-900/60 text-indigo-100 text-sm px-4 py-2.5 rounded-xl border border-indigo-500/40 font-semibold hidden sm:inline-block">
+                        <!-- Dinámico -->
+                    </span>
+                    <button type="button" onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition flex items-center gap-2 cursor-pointer shadow-sm">
+                        <i class="fa-solid fa-right-from-bracket"></i> Salir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+
+        <!-- LOGIN -->
+        <div id="view-login" class="max-w-md mx-auto bg-white p-8 rounded-3xl shadow-sm border border-slate-100 mt-8 card-box">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-4 icon-box">
+                    <i class="fa-solid fa-user-lock"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800 title-text">Iniciar Sesión</h2>
+                <p class="text-sm text-slate-400 mt-1">Ingresa con tus credenciales asignadas</p>
+            </div>
+            
+            <form onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5 label-text">Usuario</label>
+                    <input type="text" id="input-username" required placeholder="Tu usuario" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-600 mb-1.5 label-text">Contraseña</label>
+                    <input type="password" id="input-password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-2xl text-base transition shadow-sm cursor-pointer mt-2">
+                    Ingresar al Sistema
+                </button>
+            </form>
+        </div>
+
+        <!-- PANEL ADMIN -->
+        <div id="view-admin" class="hidden space-y-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between card-box">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Líderes</p>
+                        <h3 id="stat-total-leaders" class="text-3xl font-bold text-slate-800 mt-1 title-text">0</h3>
+                    </div>
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl icon-box">
+                        <i class="fa-solid fa-user-group"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between card-box">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Meta Global</p>
+                        <h3 id="stat-global-goal" class="text-3xl font-bold text-slate-800 mt-1 title-text">0</h3>
+                    </div>
+                    <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl icon-box">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between card-box">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Registrados / Puerta</p>
+                        <h3 id="stat-total-guests" class="text-3xl font-bold text-indigo-600 mt-1">0</h3>
+                    </div>
+                    <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl icon-box">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between card-box">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cumplimiento Global</p>
+                        <h3 id="stat-global-percent" class="text-3xl font-bold text-indigo-600 mt-1">0%</h3>
+                    </div>
+                    <div class="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl icon-box">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="space-y-8">
+                    <!-- Registrar Líder -->
+                    <div class="bg-white p-7 rounded-3xl shadow-sm border border-slate-100 card-box">
+                        <h3 class="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2.5 title-text">
+                            <i class="fa-solid fa-user-plus text-indigo-600"></i> Registrar Nuevo Líder
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Nombre Completo</label>
+                                <input type="text" id="leader-name" placeholder="Ej. Carlos Mendoza" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Usuario</label>
+                                    <input type="text" id="leader-user" placeholder="carlos" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Contraseña</label>
+                                    <input type="text" id="leader-pass" placeholder="clave123" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Meta de Invitados</label>
+                                <input type="number" id="leader-goal" min="1" placeholder="Ej. 25" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                            </div>
+                            <button type="button" onclick="handleAddLeaderDirect()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-2xl text-base transition shadow-sm cursor-pointer">
+                                Guardar Líder en Nube
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Registrar Co-Admin -->
+                    <div class="bg-white p-7 rounded-3xl shadow-sm border border-slate-100 card-box">
+                        <h3 class="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2.5 title-text">
+                            <i class="fa-solid fa-user-shield text-indigo-600"></i> Registrar Administrador
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Nombre / Identificador</label>
+                                <input type="text" id="admin-name" placeholder="Ej. Admin Puerta" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Usuario</label>
+                                    <input type="text" id="admin-user-input" placeholder="puerta1" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Contraseña</label>
+                                    <input type="text" id="admin-pass-input" placeholder="clave" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                                </div>
+                            </div>
+                            <button type="button" onclick="handleAddAdminDirect()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-3.5 rounded-2xl text-base transition shadow-sm cursor-pointer">
+                                Crear Administrador
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-7 rounded-3xl shadow-sm border border-slate-100 lg:col-span-2 space-y-8 card-box">
+                    <div>
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2.5 title-text">
+                                    <i class="fa-solid fa-trophy text-amber-500"></i> Ranking por Cumplimiento
+                                </h3>
+                                <p class="text-xs text-slate-400">Ordenado automáticamente de mayor a menor avance</p>
+                            </div>
+                            <button type="button" onclick="exportToCSV()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-2xl text-sm font-semibold transition flex items-center gap-2 cursor-pointer btn-secondary">
+                                <i class="fa-solid fa-file-arrow-down"></i> Exportar CSV
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto max-h-[300px] overflow-y-auto">
+                            <table class="w-full text-left border-collapse text-base">
+                                <thead class="sticky top-0 bg-slate-50 text-slate-500 uppercase text-xs tracking-wider table-head">
+                                    <tr>
+                                        <th class="p-3.5">Líder / Usuario</th>
+                                        <th class="p-3.5 text-center">Registrados / Meta</th>
+                                        <th class="p-3.5">Avance</th>
+                                        <th class="p-3.5 text-center">Estado</th>
+                                        <th class="p-3.5 text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-leaders-table" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Administradores -->
+                    <div class="pt-6 border-t border-slate-100">
+                        <div class="flex justify-between items-center mb-5">
+                            <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2.5 title-text">
+                                <i class="fa-solid fa-shield-halved text-indigo-600"></i> Administradores del Sistema
+                            </h3>
+                            <button type="button" onclick="openEditMyProfileModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-2xl text-sm font-semibold transition flex items-center gap-2 cursor-pointer btn-soft">
+                                <i class="fa-solid fa-user-gear"></i> Editar Mis Datos
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto max-h-[200px] overflow-y-auto">
+                            <table class="w-full text-left border-collapse text-base">
+                                <thead class="sticky top-0 bg-slate-50 text-slate-500 uppercase text-xs tracking-wider table-head">
+                                    <tr>
+                                        <th class="p-3.5">Nombre</th>
+                                        <th class="p-3.5">Usuario</th>
+                                        <th class="p-3.5 text-right">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-users-table" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Base de Datos Maestra y Búsqueda Rápida en Puerta -->
+            <div class="bg-white p-7 rounded-3xl shadow-sm border border-slate-100 card-box">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2.5 title-text">
+                            <i class="fa-solid fa-clipboard-user text-indigo-600"></i> Control de Asistencia en Puerta
+                        </h3>
+                        <p class="text-xs text-slate-400">Busca en tiempo real o filtra por líder asignado</p>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                        <!-- Buscador por Cédula / Nombre -->
+                        <div class="relative w-full sm:w-72">
+                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-4 text-slate-400"></i>
+                            <input type="text" id="search-guest-input" onkeyup="renderMasterGuests()" placeholder="Buscar cédula o nombre..." class="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 text-base bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                        </div>
+
+                        <!-- Filtro por Líder -->
+                        <select id="filter-leader" onchange="renderMasterGuests()" class="w-full sm:w-64 px-4 py-3 rounded-2xl border border-slate-200 text-base bg-slate-50 focus:outline-none input-field">
+                            <option value="">Filtrar por líder (Todos)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto max-h-[450px] overflow-y-auto">
+                    <table class="w-full text-left border-collapse text-base">
+                        <thead class="sticky top-0 bg-slate-50 text-slate-500 uppercase text-xs tracking-wider table-head">
+                            <tr>
+                                <th class="p-3.5">Invitado</th>
+                                <th class="p-3.5">Cédula</th>
+                                <th class="p-3.5">Teléfono</th>
+                                <th class="p-3.5">Líder Responsable</th>
+                                <th class="p-3.5 text-center">Check-in (Puerta)</th>
+                                <th class="p-3.5 text-right">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="master-guests-table" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL LÍDER -->
+        <div id="view-leader" class="hidden space-y-8">
+            <div class="bg-white p-7 rounded-3xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-6 card-box">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl icon-box">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400">Bienvenido(a),</p>
+                        <h3 id="logged-leader-name" class="text-xl font-bold text-slate-800 title-text">Nombre del Líder</h3>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6 bg-indigo-50 px-6 py-3 rounded-2xl border border-indigo-100 w-full sm:w-auto justify-around stat-box">
+                    <div class="text-center">
+                        <p class="text-xs font-semibold text-indigo-400 uppercase">Meta</p>
+                        <p id="leader-target-display" class="text-xl font-bold text-indigo-700">0</p>
+                    </div>
+                    <div class="h-8 w-px bg-indigo-200"></div>
+                    <div class="text-center">
+                        <p class="text-xs font-semibold text-indigo-400 uppercase">Registrados</p>
+                        <p id="leader-current-display" class="text-xl font-bold text-indigo-700">0</p>
+                    </div>
+                    <div class="h-8 w-px bg-indigo-200"></div>
+                    <div class="text-center">
+                        <p class="text-xs font-semibold text-indigo-400 uppercase">Progreso</p>
+                        <p id="leader-percent-display" class="text-xl font-bold text-indigo-700">0%</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-7 rounded-3xl shadow-sm border border-slate-100 h-fit card-box">
+                    <h3 class="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2.5 title-text">
+                        <i class="fa-solid fa-user-plus text-indigo-600"></i> Registrar Invitado
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Nombre Completo</label>
+                            <input type="text" id="guest-name" placeholder="Ej. Ana Pérez" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Número de Cédula (Anti-duplicados)</label>
+                            <input type="text" id="guest-cedula" placeholder="Ej. 1114555666" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Teléfono / WhatsApp</label>
+                            <input type="text" id="guest-phone" placeholder="Ej. 3001234567" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Correo Electrónico (Opcional)</label>
+                            <input type="email" id="guest-email" placeholder="correo@ejemplo.com" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                        </div>
+                        <button type="button" onclick="handleAddGuestDirect()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-2xl text-base transition shadow-sm cursor-pointer">
+                            Guardar Invitado
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-7 rounded-3xl shadow-sm border border-slate-100 lg:col-span-2 card-box">
+                    <h3 class="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2.5 title-text">
+                        <i class="fa-solid fa-list-check text-indigo-600"></i> Mis Invitados Registrados
+                    </h3>
+                    <div class="overflow-x-auto max-h-[450px] overflow-y-auto">
+                        <table class="w-full text-left border-collapse text-base">
+                            <thead class="sticky top-0 bg-slate-50 text-slate-500 uppercase text-xs tracking-wider table-head">
+                                <tr>
+                                    <th class="p-3.5">Invitado</th>
+                                    <th class="p-3.5">Cédula</th>
+                                    <th class="p-3.5">Teléfono</th>
+                                    <th class="p-3.5 text-center">Estado en Puerta</th>
+                                    <th class="p-3.5 text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leader-guests-table" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL EDITAR PERFIL ADMIN -->
+    <div id="modal-edit-admin" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 w-full max-w-md p-7 space-y-5 card-box">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 title-text">
+                    <i class="fa-solid fa-user-gear text-indigo-600"></i> Editar Mis Datos de Administrador
+                </h3>
+                <button type="button" onclick="closeEditAdminModal()" class="text-slate-400 hover:text-slate-600 text-2xl cursor-pointer">&times;</button>
+            </div>
+            <div class="space-y-4">
+                <input type="hidden" id="edit-admin-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Nombre / Identificador</label>
+                    <input type="text" id="edit-admin-name" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Usuario</label>
+                        <input type="text" id="edit-admin-user" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Contraseña</label>
+                        <input type="text" id="edit-admin-pass" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-3">
+                    <button type="button" onclick="closeEditAdminModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-2xl text-base transition cursor-pointer btn-secondary">
+                        Cancelar
+                    </button>
+                    <button type="button" onclick="handleSaveEditAdminDirect()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-2xl text-base transition shadow-sm cursor-pointer">
+                        Guardar en Nube
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR LÍDER (ADMIN) -->
+    <div id="modal-edit-leader" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 w-full max-w-md p-7 space-y-5 card-box">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 title-text">
+                    <i class="fa-solid fa-user-pen text-indigo-600"></i> Editar Datos del Líder
+                </h3>
+                <button type="button" onclick="closeEditLeaderModal()" class="text-slate-400 hover:text-slate-600 text-2xl cursor-pointer">&times;</button>
+            </div>
+            <div class="space-y-4">
+                <input type="hidden" id="edit-leader-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Nombre Completo</label>
+                    <input type="text" id="edit-leader-name" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Usuario</label>
+                        <input type="text" id="edit-leader-user" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Contraseña</label>
+                        <input type="text" id="edit-leader-pass" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1 label-text">Meta de Invitados</label>
+                    <input type="number" id="edit-leader-goal" class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/20 input-field">
+                </div>
+                <div class="flex gap-3 pt-3">
+                    <button type="button" onclick="closeEditLeaderModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-2xl text-base transition cursor-pointer btn-secondary">
+                        Cancelar
+                    </button>
+                    <button type="button" onclick="handleSaveEditLeaderDirect()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-2xl text-base transition shadow-sm cursor-pointer">
+                        Actualizar en Nube
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🗓️ CONFIGURA AQUÍ LA FECHA DE TU EVENTO (Año, Mes [0-11 donde 0 es Enero], Día, Hora, Minutos, Segundos)
+        const EVENT_DATE = new Date(2026, 10, 21, 15, 0, 0);
+
+        function updateCountdown() {
+            const now = new Date();
+            const diff = EVENT_DATE - now;
+
+            if (diff <= 0) {
+                document.getElementById('countdown-container').innerHTML = `
+                    <div class="text-amber-400 font-bold text-base px-4 py-1 flex items-center gap-2">
+                        <i class="fa-solid fa-bullhorn animate-bounce"></i> ¡El evento ha comenzado!
+                    </div>
+                `;
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            document.getElementById('cd-days').innerText = String(days).padStart(2, '0');
+            document.getElementById('cd-hours').innerText = String(hours).padStart(2, '0');
+            document.getElementById('cd-minutes').innerText = String(minutes).padStart(2, '0');
+            document.getElementById('cd-seconds').innerText = String(seconds).padStart(2, '0');
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // Modo Alto Contraste / Exteriores
+        window.isHighContrast = false;
+        window.toggleContrastMode = function() {
+            window.isHighContrast = !window.isHighContrast;
+            const body = document.getElementById('app-body');
+            const header = document.getElementById('app-header');
+
+            if (window.isHighContrast) {
+                body.classList.remove('bg-slate-50', 'text-slate-800');
+                body.classList.add('bg-slate-950', 'text-slate-100');
+                header.classList.remove('bg-indigo-700');
+                header.classList.add('bg-slate-900', 'border-b', 'border-slate-800');
+
+                document.querySelectorAll('.card-box').forEach(el => {
+                    el.classList.remove('bg-white', 'border-slate-100');
+                    el.classList.add('bg-slate-900', 'border-slate-800', 'text-white');
+                });
+                document.querySelectorAll('.title-text').forEach(el => {
+                    el.classList.remove('text-slate-800');
+                    el.classList.add('text-slate-100');
+                });
+                document.querySelectorAll('.label-text').forEach(el => {
+                    el.classList.remove('text-slate-600');
+                    el.classList.add('text-slate-300');
+                });
+                document.querySelectorAll('.input-field').forEach(el => {
+                    el.classList.remove('bg-slate-50', 'border-slate-200');
+                    el.classList.add('bg-slate-800', 'border-slate-700', 'text-white');
+                });
+                document.querySelectorAll('.table-head').forEach(el => {
+                    el.classList.remove('bg-slate-50', 'text-slate-500');
+                    el.classList.add('bg-slate-800', 'text-slate-300');
+                });
+            } else {
+                body.classList.remove('bg-slate-950', 'text-slate-100');
+                body.classList.add('bg-slate-50', 'text-slate-800');
+                header.classList.remove('bg-slate-900', 'border-b', 'border-slate-800');
+                header.classList.add('bg-indigo-700');
+
+                document.querySelectorAll('.card-box').forEach(el => {
+                    el.classList.remove('bg-slate-900', 'border-slate-800', 'text-white');
+                    el.classList.add('bg-white', 'border-slate-100');
+                });
+                document.querySelectorAll('.title-text').forEach(el => {
+                    el.classList.remove('text-slate-100');
+                    el.classList.add('text-slate-800');
+                });
+                document.querySelectorAll('.label-text').forEach(el => {
+                    el.classList.remove('text-slate-300');
+                    el.classList.add('text-slate-600');
+                });
+                document.querySelectorAll('.input-field').forEach(el => {
+                    el.classList.remove('bg-slate-800', 'border-slate-700', 'text-white');
+                    el.classList.add('bg-slate-50', 'border-slate-200');
+                });
+                document.querySelectorAll('.table-head').forEach(el => {
+                    el.classList.remove('bg-slate-800', 'text-slate-300');
+                    el.classList.add('bg-slate-50', 'text-slate-500');
+                });
+            }
+        };
+
+        window.admins = [];
+        window.leaders = [];
+        window.guests = [];
+
+        window.currentRole = localStorage.getItem('session_role') || null;
+        window.currentAdminId = localStorage.getItem('session_admin_id') || null;
+        window.currentLeaderId = localStorage.getItem('session_leader_id') || null;
+
+        setTimeout(() => {
+            if (!window.db) return;
+
+            window.dbOnValue(window.dbRef(window.db, 'admins'), (snapshot) => {
+                const data = snapshot.val();
+                window.admins = data ? Object.keys(data).map(k => ({ id: k, ...data[k] })) : [];
+                
+                if (window.admins.length === 0) {
+                    const defaultAdminRef = window.dbPush(window.dbRef(window.db, 'admins'));
+                    window.dbSet(defaultAdminRef, { name: "Administrador Principal", user: "admin", pass: "admin123" });
+                }
+                window.initView();
+            });
+
+            window.dbOnValue(window.dbRef(window.db, 'leaders'), (snapshot) => {
+                const data = snapshot.val();
+                window.leaders = data ? Object.keys(data).map(k => ({ id: k, ...data[k] })) : [];
+                window.initView();
+            });
+
+            window.dbOnValue(window.dbRef(window.db, 'guests'), (snapshot) => {
+                const data = snapshot.val();
+                window.guests = data ? Object.keys(data).map(k => ({ id: k, ...data[k] })) : [];
+                window.initView();
+            });
+        }, 1000);
+
+        window.handleLogin = function(e) {
+            e.preventDefault();
+            const u = document.getElementById('input-username').value.trim().toLowerCase();
+            const p = document.getElementById('input-password').value.trim();
+
+            const foundAdmin = window.admins.find(a => a.user.toLowerCase() === u && a.pass === p);
+            if (foundAdmin) {
+                window.currentRole = 'admin';
+                window.currentAdminId = foundAdmin.id;
+                window.currentLeaderId = null;
+                localStorage.setItem('session_role', 'admin');
+                localStorage.setItem('session_admin_id', foundAdmin.id);
+                window.initView();
+                return;
+            }
+
+            const foundLeader = window.leaders.find(l => l.user.toLowerCase() === u && l.pass === p);
+            if (foundLeader) {
+                window.currentRole = 'leader';
+                window.currentLeaderId = foundLeader.id;
+                window.currentAdminId = null;
+                localStorage.setItem('session_role', 'leader');
+                localStorage.setItem('session_leader_id', foundLeader.id);
+                window.initView();
+                return;
+            }
+
+            alert('⚠️ Credenciales incorrectas.');
+        };
+
+        window.handleLogout = function() {
+            window.currentRole = null;
+            window.currentAdminId = null;
+            window.currentLeaderId = null;
+            localStorage.clear();
+            window.initView();
+        };
+
+        window.initView = function() {
+            const viewLogin = document.getElementById('view-login');
+            const viewAdmin = document.getElementById('view-admin');
+            const viewLeader = document.getElementById('view-leader');
+            const sessionInfo = document.getElementById('header-session-info');
+            const userBadge = document.getElementById('header-user-badge');
+
+            viewLogin.classList.add('hidden');
+            viewAdmin.classList.add('hidden');
+            viewLeader.classList.add('hidden');
+
+            if (!window.currentRole) {
+                viewLogin.classList.remove('hidden');
+                sessionInfo.classList.add('hidden');
+                return;
+            }
+
+            sessionInfo.classList.remove('hidden');
+
+            if (window.currentRole === 'admin') {
+                const adminObj = window.admins.find(a => a.id === window.currentAdminId) || window.admins[0];
+                userBadge.innerHTML = `<i class="fa-solid fa-shield-halved mr-1 text-indigo-300"></i> Admin: ${adminObj ? adminObj.name : 'Principal'}`;
+                viewAdmin.classList.remove('hidden');
+                window.renderAdmin();
+            } else if (window.currentRole === 'leader') {
+                const leaderObj = window.leaders.find(l => l.id === window.currentLeaderId);
+                userBadge.innerHTML = `<i class="fa-solid fa-user-tie mr-1 text-indigo-300"></i> ${leaderObj ? leaderObj.name : 'Líder'}`;
+                viewLeader.classList.remove('hidden');
+                window.renderLeaderDashboard();
+            }
+        };
+
+        // Modales de Edición
+        window.openEditMyProfileModal = function() {
+            const adminObj = window.admins.find(a => a.id === window.currentAdminId) || window.admins[0];
+            if (!adminObj) return;
+
+            document.getElementById('edit-admin-id').value = adminObj.id;
+            document.getElementById('edit-admin-name').value = adminObj.name;
+            document.getElementById('edit-admin-user').value = adminObj.user;
+            document.getElementById('edit-admin-pass').value = adminObj.pass;
+
+            document.getElementById('modal-edit-admin').classList.remove('hidden');
+        };
+
+        window.closeEditAdminModal = function() {
+            document.getElementById('modal-edit-admin').classList.add('hidden');
+        };
+
+        window.handleSaveEditAdminDirect = function() {
+            const id = document.getElementById('edit-admin-id').value;
+            const name = document.getElementById('edit-admin-name').value.trim();
+            const user = document.getElementById('edit-admin-user').value.trim().toLowerCase();
+            const pass = document.getElementById('edit-admin-pass').value.trim();
+
+            if (!name || !user || !pass) {
+                alert('Por favor completa todos los campos.');
+                return;
+            }
+
+            window.dbUpdate(window.dbRef(window.db, `admins/${id}`), { name, user, pass });
+            window.closeEditAdminModal();
+            alert('¡Tus credenciales de Administrador fueron actualizadas en la nube!');
+        };
+
+        window.openEditLeaderModal = function(id) {
+            const leader = window.leaders.find(l => l.id === id);
+            if (!leader) return;
+
+            document.getElementById('edit-leader-id').value = leader.id;
+            document.getElementById('edit-leader-name').value = leader.name;
+            document.getElementById('edit-leader-user').value = leader.user;
+            document.getElementById('edit-leader-pass').value = leader.pass;
+            document.getElementById('edit-leader-goal').value = leader.goal;
+
+            document.getElementById('modal-edit-leader').classList.remove('hidden');
+        };
+
+        window.closeEditLeaderModal = function() {
+            document.getElementById('modal-edit-leader').classList.add('hidden');
+        };
+
+        window.handleSaveEditLeaderDirect = function() {
+            const id = document.getElementById('edit-leader-id').value;
+            const name = document.getElementById('edit-leader-name').value.trim();
+            const user = document.getElementById('edit-leader-user').value.trim().toLowerCase();
+            const pass = document.getElementById('edit-leader-pass').value.trim();
+            const goal = parseInt(document.getElementById('edit-leader-goal').value);
+
+            if (!name || !user || !pass || isNaN(goal)) {
+                alert('Por favor completa todos los campos.');
+                return;
+            }
+
+            window.dbUpdate(window.dbRef(window.db, `leaders/${id}`), { name, user, pass, goal });
+            window.closeEditLeaderModal();
+            alert('¡Datos del líder actualizados en la nube!');
+        };
+
+        window.handleAddLeaderDirect = function() {
+            const name = document.getElementById('leader-name').value.trim();
+            const user = document.getElementById('leader-user').value.trim().toLowerCase();
+            const pass = document.getElementById('leader-pass').value.trim();
+            const goal = parseInt(document.getElementById('leader-goal').value);
+
+            if (!name || !user || !pass || isNaN(goal)) {
+                alert('Por favor completa todos los campos.');
+                return;
+            }
+
+            const newLeaderRef = window.dbPush(window.dbRef(window.db, 'leaders'));
+            window.dbSet(newLeaderRef, { name, user, pass, goal });
+
+            document.getElementById('leader-name').value = '';
+            document.getElementById('leader-user').value = '';
+            document.getElementById('leader-pass').value = '';
+            document.getElementById('leader-goal').value = '';
+            alert('¡Líder guardado en la nube!');
+        };
+
+        window.handleAddAdminDirect = function() {
+            const name = document.getElementById('admin-name').value.trim();
+            const user = document.getElementById('admin-user-input').value.trim().toLowerCase();
+            const pass = document.getElementById('admin-pass-input').value.trim();
+
+            if (!name || !user || !pass) {
+                alert('Por favor completa todos los campos.');
+                return;
+            }
+
+            const newAdminRef = window.dbPush(window.dbRef(window.db, 'admins'));
+            window.dbSet(newAdminRef, { name, user, pass });
+
+            document.getElementById('admin-name').value = '';
+            document.getElementById('admin-user-input').value = '';
+            document.getElementById('admin-pass-input').value = '';
+            alert('¡Administrador creado con éxito!');
+        };
+
+        window.handleAddGuestDirect = function() {
+            if (!window.currentLeaderId) return;
+
+            const name = document.getElementById('guest-name').value.trim();
+            const cedula = document.getElementById('guest-cedula').value.trim();
+            const phone = document.getElementById('guest-phone').value.trim();
+            const email = document.getElementById('guest-email').value.trim();
+
+            if (!name || !cedula || !phone) {
+                alert('Completa los campos obligatorios.');
+                return;
+            }
+
+            const existingGuest = window.guests.find(g => g.cedula === cedula);
+            if (existingGuest) {
+                const registeredByLeader = window.leaders.find(l => l.id === existingGuest.leaderId);
+                alert(`⚠️ Cédula ya registrada por ${registeredByLeader ? registeredByLeader.name : 'otro líder'}.`);
+                return;
+            }
+
+            const newGuestRef = window.dbPush(window.dbRef(window.db, 'guests'));
+            window.dbSet(newGuestRef, {
+                leaderId: window.currentLeaderId,
+                name,
+                cedula,
+                phone,
+                email,
+                attended: false,
+                date: new Date().toISOString()
+            });
+
+            document.getElementById('guest-name').value = '';
+            document.getElementById('guest-cedula').value = '';
+            document.getElementById('guest-phone').value = '';
+            document.getElementById('guest-email').value = '';
+            alert('¡Invitado registrado!');
+        };
+
+        window.toggleAttendance = function(guestId) {
+            const guest = window.guests.find(g => g.id === guestId);
+            if (guest) {
+                window.dbUpdate(window.dbRef(window.db, `guests/${guestId}`), {
+                    attended: !guest.attended
+                });
+            }
+        };
+
+        window.deleteGuest = function(id) {
+            if (confirm('¿Eliminar este invitado?')) {
+                window.dbRemove(window.dbRef(window.db, `guests/${id}`));
+            }
+        };
+
+        window.deleteLeader = function(id) {
+            if (confirm('¿Eliminar este líder y sus registros?')) {
+                window.dbRemove(window.dbRef(window.db, `leaders/${id}`));
+            }
+        };
+
+        window.deleteAdmin = function(id) {
+            if (window.admins.length <= 1) {
+                alert('No puedes eliminar al único administrador.');
+                return;
+            }
+            if (confirm('¿Eliminar este administrador?')) {
+                window.dbRemove(window.dbRef(window.db, `admins/${id}`));
+            }
+        };
+
+        window.renderAdmin = function() {
+            let totalGuestsCount = window.guests.length;
+            let attendedCount = window.guests.filter(g => g.attended).length;
+            let totalGoalCount = window.leaders.reduce((acc, l) => acc + Number(l.goal), 0);
+            let globalPercent = totalGoalCount > 0 ? Math.min(100, Math.round((totalGuestsCount / totalGoalCount) * 100)) : 0;
+
+            document.getElementById('stat-total-leaders').innerText = window.leaders.length;
+            document.getElementById('stat-global-goal').innerText = totalGoalCount;
+            document.getElementById('stat-total-guests').innerHTML = `${totalGuestsCount} <span class="text-base font-normal text-slate-400">(${attendedCount} en puerta)</span>`;
+            document.getElementById('stat-global-percent').innerText = globalPercent + '%';
+
+            // Ordenar líderes por porcentaje de cumplimiento (Ranking dinámico)
+            const sortedLeaders = [...window.leaders].map(leader => {
+                const count = window.guests.filter(g => g.leaderId === leader.id).length;
+                const percent = leader.goal > 0 ? Math.min(100, Math.round((count / leader.goal) * 100)) : 0;
+                return { ...leader, count, percent };
+            }).sort((a, b) => b.percent - a.percent || b.count - a.count);
+
+            const tbodyLeaders = document.getElementById('admin-leaders-table');
+            tbodyLeaders.innerHTML = '';
+            sortedLeaders.forEach(leader => {
+                tbodyLeaders.innerHTML += `
+                    <tr class="hover:bg-slate-50/50 transition">
+                        <td class="p-4">
+                            <p class="font-bold text-slate-800 text-base flex items-center gap-1.5">
+                                ${leader.percent >= 100 ? '<i class="fa-solid fa-crown text-amber-500 text-sm"></i>' : ''}
+                                ${leader.name}
+                            </p>
+                            <p class="text-sm text-slate-400">Usuario: <span class="font-mono text-indigo-600 font-semibold">${leader.user}</span></p>
+                        </td>
+                        <td class="p-4 text-center"><span class="font-bold text-indigo-600 text-lg">${leader.count}</span> / ${leader.goal}</td>
+                        <td class="p-4 w-44">
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden">
+                                    <div class="bg-indigo-600 h-3 rounded-full" style="width: ${leader.percent}%"></div>
+                                </div>
+                                <span class="text-sm font-bold text-slate-600 w-10 text-right">${leader.percent}%</span>
+                            </div>
+                        </td>
+                        <td class="p-4 text-center">
+                            <span class="px-3 py-1.5 rounded-full text-xs font-bold ${leader.count >= leader.goal ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
+                                ${leader.count >= leader.goal ? '✓ Meta Cumplida' : 'En Progreso'}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right flex justify-end gap-2">
+                            <button type="button" onclick="openEditLeaderModal('${leader.id}')" class="text-slate-400 hover:text-indigo-600 text-lg p-1 cursor-pointer" title="Editar Líder"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button type="button" onclick="deleteLeader('${leader.id}')" class="text-slate-400 hover:text-rose-600 text-lg p-1 cursor-pointer" title="Eliminar Líder"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            const tbodyAdmins = document.getElementById('admin-users-table');
+            tbodyAdmins.innerHTML = '';
+            window.admins.forEach(adm => {
+                let deleteBtn = (window.admins.length > 1 && adm.id !== window.currentAdminId)
+                    ? `<button type="button" onclick="deleteAdmin('${adm.id}')" class="text-slate-400 hover:text-rose-600 text-lg p-1 cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>`
+                    : `<span class="text-xs text-slate-400 font-semibold">(Actual)</span>`;
+
+                tbodyAdmins.innerHTML += `
+                    <tr class="hover:bg-slate-50/50 transition">
+                        <td class="p-4 font-bold text-slate-800 text-base">${adm.name}</td>
+                        <td class="p-4 font-mono text-indigo-600 font-semibold text-base">${adm.user}</td>
+                        <td class="p-4 text-right">${deleteBtn}</td>
+                    </tr>
+                `;
+            });
+
+            window.updateFilterDropdown();
+            window.renderMasterGuests();
+        };
+
+        window.renderLeaderDashboard = function() {
+            const leader = window.leaders.find(l => l.id === window.currentLeaderId);
+            if (!leader) return;
+
+            document.getElementById('logged-leader-name').innerText = leader.name;
+            const leaderGuests = window.guests.filter(g => g.leaderId === window.currentLeaderId);
+            const count = leaderGuests.length;
+            const percent = leader.goal > 0 ? Math.min(100, Math.round((count / leader.goal) * 100)) : 0;
+
+            document.getElementById('leader-target-display').innerText = leader.goal;
+            document.getElementById('leader-current-display').innerText = count;
+            document.getElementById('leader-percent-display').innerText = percent + '%';
+
+            const tbody = document.getElementById('leader-guests-table');
+            tbody.innerHTML = '';
+            leaderGuests.forEach(guest => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/50 transition">
+                        <td class="p-4 font-bold text-slate-800 text-base">${guest.name}</td>
+                        <td class="p-4 font-mono text-slate-600 text-base">${guest.cedula}</td>
+                        <td class="p-4 text-slate-600 text-base">${guest.phone}</td>
+                        <td class="p-4 text-center">
+                            <span class="px-3 py-1.5 rounded-full text-xs font-bold ${guest.attended ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}">
+                                ${guest.attended ? 'Asistió' : 'Pendiente'}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button type="button" onclick="deleteGuest('${guest.id}')" class="text-slate-400 hover:text-rose-600 text-lg p-1 cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        };
+
+        window.updateFilterDropdown = function() {
+            const selectFilter = document.getElementById('filter-leader');
+            const currentValue = selectFilter.value;
+            selectFilter.innerHTML = '<option value="">Filtrar por líder (Todos)</option>';
+            window.leaders.forEach(l => {
+                selectFilter.innerHTML += `<option value="${l.id}">${l.name}</option>`;
+            });
+            selectFilter.value = currentValue;
+        };
+
+        // Renderizado maestro con filtro por líder y buscador por cédula/nombre
+        window.renderMasterGuests = function() {
+            const filterId = document.getElementById('filter-leader').value;
+            const searchQuery = (document.getElementById('search-guest-input')?.value || '').trim().toLowerCase();
+            const tbodyMaster = document.getElementById('master-guests-table');
+            tbodyMaster.innerHTML = '';
+
+            let filteredGuests = window.guests;
+
+            if (filterId) {
+                filteredGuests = filteredGuests.filter(g => g.leaderId === filterId);
+            }
+
+            if (searchQuery) {
+                filteredGuests = filteredGuests.filter(g => 
+                    g.name.toLowerCase().includes(searchQuery) || 
+                    g.cedula.toLowerCase().includes(searchQuery) ||
+                    (g.phone && g.phone.includes(searchQuery))
+                );
+            }
+
+            if (filteredGuests.length === 0) {
+                tbodyMaster.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="p-6 text-center text-slate-400 font-medium">
+                            <i class="fa-solid fa-folder-open text-2xl mb-2 block"></i> No se encontraron invitados que coincidan.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filteredGuests.forEach(guest => {
+                const leaderObj = window.leaders.find(l => l.id === guest.leaderId);
+                tbodyMaster.innerHTML += `
+                    <tr class="hover:bg-slate-50/50 transition">
+                        <td class="p-4 font-bold text-slate-800 text-base">${guest.name}</td>
+                        <td class="p-4 font-mono text-slate-600 text-base">${guest.cedula}</td>
+                        <td class="p-4 text-slate-600 text-base">${guest.phone}</td>
+                        <td class="p-4"><span class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl text-xs font-bold">${leaderObj ? leaderObj.name : 'Líder Nube'}</span></td>
+                        <td class="p-4 text-center">
+                            <button type="button" onclick="toggleAttendance('${guest.id}')" class="px-4 py-2 rounded-full text-sm font-bold border transition cursor-pointer ${guest.attended ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200'}">
+                                ${guest.attended ? '✓ Asistió' : '○ Pendiente'}
+                            </button>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button type="button" onclick="deleteGuest('${guest.id}')" class="text-slate-400 hover:text-rose-600 text-lg p-1 cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        };
+
+        window.exportToCSV = function() {
+            let csvContent = "data:text/csv;charset=utf-8,ID_Invitado,Nombre_Invitado,Cedula,Telefono,Correo,Asistio_Puerta,Lider_Asignado\r\n";
+            window.guests.forEach(g => {
+                const leaderObj = window.leaders.find(l => l.id === g.leaderId);
+                csvContent += `"${g.id}","${g.name}","${g.cedula}","${g.phone}","${g.email || ''}","${g.attended ? 'SI' : 'NO'}","${leaderObj ? leaderObj.name : ''}"\r\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "base_datos_asistencia.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+    </script>
+</body>
+</html>
